@@ -25,41 +25,25 @@
 
 package it.geosolutions.geoserver.rest;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
 import net.sf.json.JSON;
 import net.sf.json.JSONSerializer;
-
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import org.apache.commons.httpclient.methods.FileRequestEntity;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Low level HTTP utilities.
@@ -178,8 +162,9 @@ public class HTTPUtils {
         try {
             return put(url, new StringRequestEntity(content, contentType, null), username, pw);
         } catch (UnsupportedEncodingException ex) {
-            LOGGER.error("Cannot PUT " + url, ex);
-            return null;
+            String message = "Cannot PUT " + url + ", " + ex.getLocalizedMessage();
+            LOGGER.error(message);
+            return message;
         }
     }
 
@@ -270,8 +255,9 @@ public class HTTPUtils {
         try {
             return post(url, new StringRequestEntity(content, contentType, null), username, pw);
         } catch (UnsupportedEncodingException ex) {
-            LOGGER.error("Cannot POST " + url, ex);
-            return null;
+            String message = "Cannot POST " + url + ", " + ex;
+            LOGGER.error(message);
+            return message;
         }
     }
 
@@ -393,20 +379,23 @@ public class HTTPUtils {
                 // LOGGER.info("================= POST " + url);
                 if (LOGGER.isInfoEnabled())
                     LOGGER.info("HTTP " + httpMethod.getStatusText() + ": " + response);
-                return response;
+                return HttpURLConnection.HTTP_OK + "|" + response;
             default:
                 responseBody = httpMethod.getResponseBodyAsStream();
-                LOGGER.warn("Bad response: code[" + status + "]" + " msg[" + httpMethod.getStatusText() + "]"
-                            + " url[" + url + "]" + " method[" + httpMethod.getClass().getSimpleName()
-                            + "]: " + (responseBody != null ? IOUtils.toString(responseBody) : ""));
-                return null;
+                String message = "Bad response: code[" + status + "]" + " msg[" + httpMethod.getStatusText() + "]"
+                        + " url[" + url + "]" + " method[" + httpMethod.getClass().getSimpleName()
+                        + "]: " + (responseBody != null ? IOUtils.toString(responseBody) : "");
+                LOGGER.warn(message);
+                return message;
             }
         } catch (ConnectException e) {
-            LOGGER.info("Couldn't connect to [" + url + "]");
-            return null;
+            String message = "Couldn't connect to [" + url + "]" + ", " + e.getLocalizedMessage();
+            LOGGER.info(message);
+            return message;
         } catch (IOException e) {
-            LOGGER.error("Error talking to " + url + " : " + e.getLocalizedMessage());
-            return null;
+            String message = "Error talking to " + url + " : " + e.getLocalizedMessage();
+            LOGGER.error(message);
+            return message;
         } finally {
             if (httpMethod != null)
                 httpMethod.releaseConnection();
